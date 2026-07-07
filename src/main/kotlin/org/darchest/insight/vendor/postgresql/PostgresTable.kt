@@ -62,6 +62,8 @@ open class PostgresTable(name: String): Table(name) {
 
 	class BinaryCol(name: String): ColDelegate<BinaryColumn>(BinaryColumn(name))
 
+	class NumericCol(name: String): ColDelegate<NumericColumn>(NumericColumn(name))
+
 	class ShortCol(name: String): ColDelegate<ShortColumn>(ShortColumn(name))
 
 	class IntCol(name: String): ColDelegate<IntColumn>(IntColumn(name))
@@ -70,7 +72,14 @@ open class PostgresTable(name: String): Table(name) {
 
 	class BoolCol(name: String): ColDelegate<BoolColumn>(BoolColumn(name))
 
-	class DateCol(name: String): ColDelegate<DateColumn>(DateColumn(name))
+	class LocalDateCol(name: String): ColDelegate<LocalDateColumn>(LocalDateColumn(name))
+
+	class LocalTimeCol(name: String): ColDelegate<LocalTimeColumn>(LocalTimeColumn(name))
+
+	class LocalDateTimeCol(name: String): ColDelegate<LocalDateTimeColumn>(LocalDateTimeColumn(name))
+
+	class InstantCol(name: String): ColDelegate<InstantColumn>(InstantColumn(name))
+
 
 	fun <T: PostgresTable> countExpr() = CountExpression()
 

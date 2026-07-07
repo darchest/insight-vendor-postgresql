@@ -30,3 +30,13 @@ open class StringType(name: String): PostgresqlType(name)
 open class CharType: StringType("char")
 
 open class VarCharType: StringType("varchar")
+
+open class TextType: StringType("text")
+
+open class DateType: PostgresqlType("date")
+
+open class TimeType: PostgresqlType("time")
+
+open class TimeStampType: PostgresqlType("timestamp")
+
+open class TimeStampWithTimeZoneType: PostgresqlType("timestamptz")

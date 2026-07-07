@@ -15,7 +15,7 @@ repositories {
 dependencies {
     implementation("org.darchest:insight:1.0-SNAPSHOT")
 
-    implementation("org.postgresql:postgresql:42.7.4")
+    implementation("org.postgresql:postgresql:42.7.7")
 
     testImplementation(kotlin("test"))
 }

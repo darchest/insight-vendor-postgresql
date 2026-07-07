@@ -8,11 +8,19 @@ package org.darchest.insight.vendor.postgresql
 import org.darchest.insight.*
 import java.sql.PreparedStatement
 import java.sql.ResultSet
+import java.sql.Timestamp
 import java.sql.Types
-import java.time.Instant
+import java.time.*
 import java.util.*
 
 object PostgresVendor: Vendor {
+
+	val LOCAL_DATE_MIN = LocalDate.of(1, 1, 1)
+	val LOCAL_TIME_MIN = LocalTime.MIN
+	val LOCAL_DATE_TIME_MIN = LocalDateTime.of(1, 1, 1, 0, 0)
+	val LOCAL_DATE_TIME_MAX = LocalDateTime.of(3000, 1, 1, 0, 0)
+
+	private var inited = false
 
 	abstract class DefaultNullTypeConverter: SqlTypeConverter {
 		override fun javaToSql(value: Any?): String {
@@ -35,12 +43,19 @@ object PostgresVendor: Vendor {
 	}
 
 	override fun init() {
+		if (inited)
+			return
+		inited = true
 		initUuidType()
 		initCharTypes()
 		initNumberTypes()
 		initByteaTypes()
 		initUuidArrayType()
 		initBooleanType()
+		initDateType()
+		initTimeType()
+		initTimeStampType()
+		initTimeStampWithTimeZoneType()
 	}
 
 	private fun initUuidType() {
@@ -50,6 +65,13 @@ object PostgresVendor: Vendor {
 			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setObject(ind, value, Types.OTHER)
 
 			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getObject(ind, UUID::class.java)
+		})
+		SqlTypeConvertersRegistry.registerConverter(String::class.java, UuidType::class.java, object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String = "'${UUID.fromString(value as String)}'"
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setObject(ind, UUID.fromString(value as String), Types.OTHER)
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getObject(ind, String::class.java)
 		})
 	}
 
@@ -64,9 +86,17 @@ object PostgresVendor: Vendor {
 
 		SqlTypeConvertersRegistry.registerConverter(String::class.java, VarCharType::class.java, strConv)
 		SqlTypeConvertersRegistry.registerConverter(String::class.java, CharType::class.java, strConv)
+		SqlTypeConvertersRegistry.registerConverter(String::class.java, TextType::class.java, strConv)
 	}
 
 	private fun initNumberTypes() {
+		SqlTypeConvertersRegistry.registerConverter(String::class.java, IntType::class.java, object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String = "${Integer.parseInt(value as String)}"
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setInt(ind, Integer.parseInt(value as String))
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getInt(ind)
+		})
 		SqlTypeConvertersRegistry.registerConverter(Int::class.java, IntType::class.java, object: DefaultNullTypeConverter() {
 			override fun notNullJavaToSql(value: Any): String = "$value"
 
@@ -86,7 +116,28 @@ object PostgresVendor: Vendor {
 
 			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setLong(ind, value as Long)
 
-			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getLong(ind)
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any = rs.getLong(ind)
+		})
+		SqlTypeConvertersRegistry.registerConverter(java.lang.Long::class.java, BigIntType::class.java, object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String = "$value"
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setLong(ind, (value as java.lang.Long).toLong())
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any = rs.getLong(ind)
+		})
+		SqlTypeConvertersRegistry.registerConverter(Double::class.java, NumericType::class.java, object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String = "$value"
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setDouble(ind, value as Double)
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any = rs.getDouble(ind)
+		})
+		SqlTypeConvertersRegistry.registerConverter(java.lang.Double::class.java, NumericType::class.java, object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String = "$value"
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setDouble(ind, value as Double)
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any = rs.getDouble(ind)
 		})
 		SqlTypeConvertersRegistry.registerConverter(Instant::class.java, BigIntType::class.java, object: DefaultNullTypeConverter() {
 			override fun notNullJavaToSql(value: Any): String = "${(value as Instant).toEpochMilli()}"
@@ -137,6 +188,75 @@ object PostgresVendor: Vendor {
 			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setBoolean(ind, value as Boolean)
 
 			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getBoolean(ind)
+		})
+		SqlTypeConvertersRegistry.registerConverter(java.lang.Boolean::class.java, BooleanType::class.java, object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String = "$value"
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setBoolean(ind, (value as java.lang.Boolean).booleanValue())
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getBoolean(ind)
+		})
+	}
+
+	private fun initDateType() {
+		SqlTypeConvertersRegistry.registerConverter(LocalDate::class.java, DateType::class.java, object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String = "'$value'"
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setObject(ind, value as LocalDate)
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getObject(ind, LocalDate::class.java)
+		})
+	}
+
+	private fun initTimeType() {
+		SqlTypeConvertersRegistry.registerConverter(LocalTime::class.java, TimeType::class.java, object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String = "'$value'"
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setObject(ind, value as LocalTime)
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getObject(ind, LocalTime::class.java)
+		})
+	}
+
+	private fun initTimeStampType() {
+		SqlTypeConvertersRegistry.registerConverter(LocalDateTime::class.java, TimeStampType::class.java, object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String = "'$value'"
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setObject(ind, value as LocalDateTime)
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getObject(ind, LocalDateTime::class.java)
+		})
+	}
+
+	private fun initTimeStampWithTimeZoneType() {
+		SqlTypeConvertersRegistry.registerConverter(Instant::class.java, TimeStampWithTimeZoneType::class.java, object: DefaultNullTypeConverter() {
+			val tzUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+			val minusInfinity = "-infinity"
+
+			override fun notNullJavaToSql(value: Any): String {
+				val instant = value as Instant
+				if (instant == Instant.MIN)
+					return "'$minusInfinity'"
+				return  "'$value'"
+			}
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) {
+				val instant = value as Instant
+				if (instant == Instant.MIN)
+					ps.setString(ind, minusInfinity)
+				else {
+					val ts = Timestamp.from(instant)
+					ps.setTimestamp(ind, ts, tzUTC)
+				}
+			}
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any? {
+				val asString = rs.getString(ind)
+				if (asString == minusInfinity)
+					return Instant.MIN
+				val ts = rs.getTimestamp(ind, tzUTC)
+				return ts?.toInstant()
+			}
 		})
 	}
 

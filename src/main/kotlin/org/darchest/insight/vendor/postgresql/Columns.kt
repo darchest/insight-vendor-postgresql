@@ -7,6 +7,9 @@ package org.darchest.insight.vendor.postgresql
 
 import org.darchest.insight.*
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.*
 
 open class PostgresqlColumn<javaType: Any, sqlT: PostgresqlType>(name: String, javaClass: Class<javaType>, sqlType: sqlT, length: Int? = null): TableColumn<javaType, sqlT>(name, javaClass, sqlType, length)
@@ -18,6 +21,10 @@ class PostgresqlLogical(operator: Operator, values: Collection<SqlValue<*, *>>):
 
 open class BoolColumn(name: String): PostgresqlColumn<Boolean, BooleanType>(name, Boolean::class.java, BooleanType()) {
 	override fun default(): SqlValue<*, BooleanType>? = SqlConst(false, Boolean::class.java, BooleanType())
+}
+
+open class NumericColumn(name: String): PostgresqlColumn<Double, NumericType>(name, Double::class.java, NumericType("numeric")) {
+	override fun default(): SqlValue<*, NumericType>? = SqlConst(0.0, Double::class.java, NumericType("numeric"))
 }
 
 open class ShortColumn(name: String): PostgresqlColumn<Short, SmallIntType>(name, Short::class.java, SmallIntType())
@@ -55,8 +62,20 @@ open class BinaryColumn(name: String): PostgresqlColumn<ByteArray, ByteaType>(na
 	override fun default(): SqlValue<*, ByteaType> = SqlConst("\\x", String::class.java, ByteaType())
 }
 
-open class DateColumn(name: String): PostgresqlColumn<Instant, BigIntType>(name, Instant::class.java, BigIntType()) {
-	override fun default(): SqlValue<*, BigIntType>? = SqlConst(Long.MIN_VALUE, Long::class.java, BigIntType())
+open class LocalDateColumn(name: String): PostgresqlColumn<LocalDate, DateType>(name, LocalDate::class.java, DateType()) {
+	override fun default(): SqlValue<*, DateType>? = SqlConst(PostgresVendor.LOCAL_DATE_MIN, LocalDate::class.java, DateType())
+}
+
+open class LocalTimeColumn(name: String): PostgresqlColumn<LocalTime, TimeType>(name, LocalTime::class.java, TimeType()) {
+	override fun default(): SqlValue<*, TimeType>? = SqlConst(PostgresVendor.LOCAL_TIME_MIN, LocalTime::class.java, TimeType())
+}
+
+open class LocalDateTimeColumn(name: String): PostgresqlColumn<LocalDateTime, TimeStampType>(name, LocalDateTime::class.java, TimeStampType()) {
+	override fun default(): SqlValue<*, TimeStampType>? = SqlConst(PostgresVendor.LOCAL_DATE_TIME_MIN, LocalDateTime::class.java, TimeStampType())
+}
+
+open class InstantColumn(name: String): PostgresqlColumn<Instant, TimeStampWithTimeZoneType>(name, Instant::class.java, TimeStampWithTimeZoneType()) {
+	override fun default(): SqlValue<*, TimeStampWithTimeZoneType>? = SqlConst(Instant.MIN, Instant::class.java, TimeStampWithTimeZoneType())
 }
 
 abstract class PostgresqlExpression<javaType: Any, sqlT: PostgresqlType>(javaClass: Class<javaType>, sqlType: sqlT): Expression<javaType, sqlT>(javaClass, sqlType), SqlValueNotNullGetter<javaType>

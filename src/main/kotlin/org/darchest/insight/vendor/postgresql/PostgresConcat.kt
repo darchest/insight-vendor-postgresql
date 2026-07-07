@@ -8,15 +8,9 @@ package org.darchest.insight.vendor.postgresql
 import org.darchest.insight.SqlValue
 import org.darchest.insight.Vendor
 
-class PostgresInOperator(val left: SqlValue<*, *>, val values: List<SqlValue<*, *>>, val not: Boolean = false): SqlValue<Boolean, BooleanType>(Boolean::class.java, BooleanType()) {
+class PostgresConcat(val values: List<SqlValue<*, StringType>>): SqlValue<String, StringType>(String::class.java, VarCharType()) {
     override suspend fun writeSql(builder: StringBuilder, vendor: Vendor, params: MutableList<SqlValue<*, *>>) {
-        if (values.isEmpty()) {
-            builder.append(if (not) "true" else "false")
-            return
-        }
-        left.writeSql(builder, vendor, params)
-        if (not) builder.append(" NOT")
-        builder.append(" IN (")
+        builder.append("CONCAT(")
         val iter = values.iterator()
         var value = iter.next()
         value.writeSql(builder, vendor, params)
@@ -29,7 +23,6 @@ class PostgresInOperator(val left: SqlValue<*, *>, val values: List<SqlValue<*, 
     }
 
     override fun fillByInnerColumns(array: MutableCollection<SqlValue<*, *>>) {
-        left.innerColumns(array)
         values.forEach { it.innerColumns(array) }
     }
 }

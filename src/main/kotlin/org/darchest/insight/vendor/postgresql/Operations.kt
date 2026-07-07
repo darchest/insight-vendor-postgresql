@@ -48,4 +48,6 @@ fun<sqlT: PostgresqlType> SqlValue<*, out sqlT>.notIn(arr: List<SqlValue<*, out 
 
 fun <SqlT: PostgresqlType> SqlValue<*, out PostgresqlType>.castTo(type: SqlT): SqlValue<*, SqlT> = PostgresqlCast(this, type)
 
+fun length(text: SqlValue<*, StringType>) = PostgresqlLength(text)
+
 fun SqlValue<UUIDArray, UuidArrayType>.include(vararg elems: UUID) = PostgresArrayContains(this, SqlConst(UUIDArray().apply { addAll(elems) }, UUIDArray::class.java, UuidArrayType()))
