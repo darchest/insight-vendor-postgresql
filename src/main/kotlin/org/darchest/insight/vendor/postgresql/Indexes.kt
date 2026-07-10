@@ -9,9 +9,9 @@ import org.darchest.insight.Index
 import org.darchest.insight.SqlValue
 import org.darchest.insight.Vendor
 
-class PostresqlIndex(val col: PostgresqlColumn<*, *>, override val unique: Boolean = false): Index(col) {
+class PostresqlIndex(col: PostgresqlColumn<*, *>, override val unique: Boolean = false): Index(col) {
 
-    override val name = col.name + "_idx"
+    override val name = "${col.sqlDataSource?.sqlName}_${col.name}_idx"
 
     override suspend fun writeSql(builder: StringBuilder, vendor: Vendor, params: MutableList<SqlValue<*, *>>) {
         TODO("Not yet implemented")

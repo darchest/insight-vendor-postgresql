@@ -6,6 +6,7 @@
 package org.darchest.insight.vendor.postgresql
 
 import org.darchest.insight.*
+import org.postgresql.util.PGobject
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Timestamp
@@ -40,6 +41,11 @@ object PostgresVendor: Vendor {
 		abstract fun notNullJavaToSql(value: Any): String
 
 		abstract fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any)
+	}
+
+	abstract class DateAndTimeNullTypeConverter : DefaultNullTypeConverter() {
+		val negativeInfinity = "-infinity"
+		val positiveInfinity = "infinity"
 	}
 
 	override fun init() {
@@ -199,12 +205,37 @@ object PostgresVendor: Vendor {
 	}
 
 	private fun initDateType() {
-		SqlTypeConvertersRegistry.registerConverter(LocalDate::class.java, DateType::class.java, object: DefaultNullTypeConverter() {
-			override fun notNullJavaToSql(value: Any): String = "'$value'"
+		SqlTypeConvertersRegistry.registerConverter(LocalDate::class.java, DateType::class.java, object: DateAndTimeNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String {
+				if (value == LocalDate.MIN)
+					return "'$negativeInfinity'"
+				if (value == LocalDate.MAX)
+					return "'$positiveInfinity'"
+				return "'$value'"
+			}
 
-			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setObject(ind, value as LocalDate)
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) {
+				if (value == LocalDate.MIN || value == LocalDate.MAX) {
+					val obj = PGobject()
+					obj.type = "date"
+					obj.value = if (value == LocalDate.MIN) negativeInfinity else positiveInfinity
+					ps.setObject(ind, obj)
+				} else {
+					ps.setObject(ind, value as LocalDate)
+				}
+			}
 
-			override fun sqlToJava(rs: ResultSet, ind: Int): Any? = rs.getObject(ind, LocalDate::class.java)
+			val min = LocalDateTime.MIN.toLocalDate()
+			val max = LocalDateTime.MAX.toLocalDate()
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any? {
+				val d = rs.getObject(ind, LocalDate::class.java)
+				if (d == min)
+					return LocalDate.MIN
+				if (d == max)
+					return LocalDate.MAX
+				return d
+			}
 		})
 	}
 
@@ -219,8 +250,14 @@ object PostgresVendor: Vendor {
 	}
 
 	private fun initTimeStampType() {
-		SqlTypeConvertersRegistry.registerConverter(LocalDateTime::class.java, TimeStampType::class.java, object: DefaultNullTypeConverter() {
-			override fun notNullJavaToSql(value: Any): String = "'$value'"
+		SqlTypeConvertersRegistry.registerConverter(LocalDateTime::class.java, TimeStampType::class.java, object: DateAndTimeNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String {
+				if (value == LocalDateTime.MIN)
+					return "'$negativeInfinity'"
+				if (value == LocalDateTime.MAX)
+					return "'$positiveInfinity'"
+				return "'$value'"
+			}
 
 			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setObject(ind, value as LocalDateTime)
 
@@ -229,21 +266,24 @@ object PostgresVendor: Vendor {
 	}
 
 	private fun initTimeStampWithTimeZoneType() {
-		SqlTypeConvertersRegistry.registerConverter(Instant::class.java, TimeStampWithTimeZoneType::class.java, object: DefaultNullTypeConverter() {
+		SqlTypeConvertersRegistry.registerConverter(Instant::class.java, TimeStampWithTimeZoneType::class.java, object: DateAndTimeNullTypeConverter() {
 			val tzUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-			val minusInfinity = "-infinity"
 
 			override fun notNullJavaToSql(value: Any): String {
 				val instant = value as Instant
 				if (instant == Instant.MIN)
-					return "'$minusInfinity'"
+					return "'$negativeInfinity'"
+				if (instant == Instant.MAX)
+					return "'$positiveInfinity'"
 				return  "'$value'"
 			}
 
 			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) {
 				val instant = value as Instant
 				if (instant == Instant.MIN)
-					ps.setString(ind, minusInfinity)
+					ps.setString(ind, negativeInfinity)
+				else if (instant == Instant.MAX)
+					ps.setString(ind, positiveInfinity)
 				else {
 					val ts = Timestamp.from(instant)
 					ps.setTimestamp(ind, ts, tzUTC)
@@ -252,8 +292,10 @@ object PostgresVendor: Vendor {
 
 			override fun sqlToJava(rs: ResultSet, ind: Int): Any? {
 				val asString = rs.getString(ind)
-				if (asString == minusInfinity)
+				if (asString == negativeInfinity)
 					return Instant.MIN
+				else if (asString == positiveInfinity)
+					return Instant.MAX
 				val ts = rs.getTimestamp(ind, tzUTC)
 				return ts?.toInstant()
 			}
