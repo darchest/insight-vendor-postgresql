@@ -7,6 +7,9 @@ package org.darchest.insight.vendor.postgresql
 
 import org.darchest.insight.*
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.*
 import kotlin.reflect.KProperty
 
@@ -51,34 +54,46 @@ open class PostgresTable(name: String): Table(name) {
 		}
 	}
 
-	class UUIDCol(name: String): ColDelegate<UuidColumn>(UuidColumn(name))
+	class UUIDCol(
+		name: String,
+		defaultValue: UUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
+	): ColDelegate<UuidColumn>(UuidColumn(name, defaultValue))
 
-	class UUIDArrayCol(name: String): ColDelegate<UuidArrayColumn>(UuidArrayColumn(name))
+	class UUIDArrayCol(name: String, defaultValue: UUIDArray = UUIDArray()): ColDelegate<UuidArrayColumn>(UuidArrayColumn(name, defaultValue))
 
 
-	class VarCharCol(name: String, length: Int? = null): ColDelegate<VarCharColumn>(VarCharColumn(name, length))
+	class VarCharCol(name: String, length: Int? = null, defaultValue: String = ""): ColDelegate<VarCharColumn>(VarCharColumn(name, length, defaultValue))
 
-	class ByteaTextCol(name: String): ColDelegate<ByteaTextColumn>(ByteaTextColumn(name))
+	class ByteaTextCol(name: String, defaultValue: String = ""): ColDelegate<ByteaTextColumn>(ByteaTextColumn(name, defaultValue))
 
-	class BinaryCol(name: String): ColDelegate<BinaryColumn>(BinaryColumn(name))
+	class BinaryCol(name: String, defaultValue: ByteArray = byteArrayOf()): ColDelegate<BinaryColumn>(BinaryColumn(name, defaultValue))
 
-	class NumericCol(name: String): ColDelegate<NumericColumn>(NumericColumn(name))
+	class NumericCol(name: String, defaultValue: Double = 0.0): ColDelegate<NumericColumn>(NumericColumn(name, defaultValue))
 
-	class ShortCol(name: String): ColDelegate<ShortColumn>(ShortColumn(name))
+	class ShortCol(name: String, defaultValue: Short = 0): ColDelegate<ShortColumn>(ShortColumn(name, defaultValue))
 
-	class IntCol(name: String): ColDelegate<IntColumn>(IntColumn(name))
+	class IntCol(name: String, defaultValue: Int = 0): ColDelegate<IntColumn>(IntColumn(name, defaultValue))
 
-	class LongCol(name: String): ColDelegate<LongColumn>(LongColumn(name))
+	class LongCol(name: String, defaultValue: Long = 0L): ColDelegate<LongColumn>(LongColumn(name, defaultValue))
 
-	class BoolCol(name: String): ColDelegate<BoolColumn>(BoolColumn(name))
+	class BoolCol(name: String, defaultValue: Boolean = false): ColDelegate<BoolColumn>(BoolColumn(name, defaultValue))
 
-	class LocalDateCol(name: String): ColDelegate<LocalDateColumn>(LocalDateColumn(name))
+	class LocalDateCol(
+		name: String,
+		defaultValue: LocalDate = LocalDate.MIN
+	): ColDelegate<LocalDateColumn>(LocalDateColumn(name, defaultValue))
 
-	class LocalTimeCol(name: String): ColDelegate<LocalTimeColumn>(LocalTimeColumn(name))
+	class LocalTimeCol(
+		name: String,
+		defaultValue: LocalTime = LocalTime.MIN
+	): ColDelegate<LocalTimeColumn>(LocalTimeColumn(name, defaultValue))
 
-	class LocalDateTimeCol(name: String): ColDelegate<LocalDateTimeColumn>(LocalDateTimeColumn(name))
+	class LocalDateTimeCol(
+		name: String,
+		defaultValue: LocalDateTime = LocalDateTime.MIN
+	): ColDelegate<LocalDateTimeColumn>(LocalDateTimeColumn(name, defaultValue))
 
-	class InstantCol(name: String): ColDelegate<InstantColumn>(InstantColumn(name))
+	class InstantCol(name: String, defaultValue: Instant = Instant.MIN): ColDelegate<InstantColumn>(InstantColumn(name, defaultValue))
 
 
 	fun <T: PostgresTable> countExpr() = CountExpression()
@@ -100,7 +115,7 @@ open class PostgresTable(name: String): Table(name) {
 
 	class StringExpr(value: SqlValue<*, VarCharType>): ExprDelegate<StringExpression>(StringExpression(value))
 
-	class BoolExpr(value: Boolean): ExprDelegate<BooleanExpression>(BooleanExpression(value))
+	class BoolExpr(exprFn: () -> SqlValue<Boolean, BooleanType>): ExprDelegate<BooleanExpression>(BooleanExpression(exprFn))
 
 	class StringLocalExpression(innerColumns: List<TableColumn<*, *>>, fn: suspend () -> String?): PostgresqlLocalExpression<String>(String::class.java, innerColumns, fn)
 

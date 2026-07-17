@@ -16,11 +16,6 @@ import java.util.*
 
 object PostgresVendor: Vendor {
 
-	val LOCAL_DATE_MIN = LocalDate.of(1, 1, 1)
-	val LOCAL_TIME_MIN = LocalTime.MIN
-	val LOCAL_DATE_TIME_MIN = LocalDateTime.of(1, 1, 1, 0, 0)
-	val LOCAL_DATE_TIME_MAX = LocalDateTime.of(3000, 1, 1, 0, 0)
-
 	private var inited = false
 
 	abstract class DefaultNullTypeConverter: SqlTypeConverter {
@@ -52,6 +47,7 @@ object PostgresVendor: Vendor {
 		if (inited)
 			return
 		inited = true
+
 		initUuidType()
 		initCharTypes()
 		initNumberTypes()
