@@ -5,6 +5,8 @@
 
 package org.darchest.insight.vendor.postgresql
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
 import org.darchest.insight.*
 import java.time.Instant
 import java.time.LocalDate
@@ -94,6 +96,16 @@ open class PostgresTable(name: String): Table(name) {
 	): ColDelegate<LocalDateTimeColumn>(LocalDateTimeColumn(name, defaultValue))
 
 	class InstantCol(name: String, defaultValue: Instant = Instant.MIN): ColDelegate<InstantColumn>(InstantColumn(name, defaultValue))
+
+	class JsonCol(
+		name: String,
+		defaultValue: JsonElement = JsonNull.INSTANCE
+	): ColDelegate<JsonColumn>(JsonColumn(name, defaultValue))
+
+	class JsonbCol(
+		name: String,
+		defaultValue: JsonElement = JsonNull.INSTANCE
+	): ColDelegate<JsonbColumn>(JsonbColumn(name, defaultValue))
 
 
 	fun <T: PostgresTable> countExpr() = CountExpression()

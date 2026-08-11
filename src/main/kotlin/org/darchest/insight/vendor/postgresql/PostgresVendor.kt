@@ -5,6 +5,8 @@
 
 package org.darchest.insight.vendor.postgresql
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonParser
 import org.darchest.insight.*
 import org.postgresql.util.PGobject
 import java.sql.PreparedStatement
@@ -58,6 +60,7 @@ object PostgresVendor: Vendor {
 		initTimeType()
 		initTimeStampType()
 		initTimeStampWithTimeZoneType()
+		initJsonTypes()
 	}
 
 	private fun initUuidType() {
@@ -296,6 +299,30 @@ object PostgresVendor: Vendor {
 				return ts?.toInstant()
 			}
 		})
+	}
+
+	private fun initJsonTypes() {
+		fun jsonConverter(pgType: String) = object: DefaultNullTypeConverter() {
+			override fun notNullJavaToSql(value: Any): String {
+				val json = (value as JsonElement).toString().replace("'", "''")
+				return "'$json'"
+			}
+
+			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) {
+				val obj = PGobject()
+				obj.type = pgType
+				obj.value = (value as JsonElement).toString()
+				ps.setObject(ind, obj)
+			}
+
+			override fun sqlToJava(rs: ResultSet, ind: Int): Any? {
+				val s = rs.getString(ind) ?: return null
+				return JsonParser.parseString(s)
+			}
+		}
+
+		SqlTypeConvertersRegistry.registerConverter(JsonElement::class.java, JsonType::class.java, jsonConverter("json"))
+		SqlTypeConvertersRegistry.registerConverter(JsonElement::class.java, JsonbType::class.java, jsonConverter("jsonb"))
 	}
 
 	override fun isBoolean(type: Class<out SqlType>) = BooleanType::class.java.isAssignableFrom(type)

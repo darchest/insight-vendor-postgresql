@@ -40,3 +40,7 @@ open class TimeType: PostgresqlType("time")
 open class TimeStampType: PostgresqlType("timestamp")
 
 open class TimeStampWithTimeZoneType: PostgresqlType("timestamptz")
+
+open class JsonType: PostgresqlType("json")
+
+open class JsonbType: PostgresqlType("jsonb")

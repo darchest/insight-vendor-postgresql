@@ -5,6 +5,8 @@
 
 package org.darchest.insight.vendor.postgresql
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
 import org.darchest.insight.*
 import java.time.Instant
 import java.time.LocalDate
@@ -146,6 +148,26 @@ open class InstantColumn(name: String, defaultValue: Instant = Instant.MIN): Pos
 	name,
 	Instant::class.java,
 	TimeStampWithTimeZoneType(),
+	defaultValue
+)
+
+open class JsonColumn(
+	name: String,
+	defaultValue: JsonElement = JsonNull.INSTANCE
+): PostgresqlColumn<JsonElement, JsonType>(
+	name,
+	JsonElement::class.java,
+	JsonType(),
+	defaultValue
+)
+
+open class JsonbColumn(
+	name: String,
+	defaultValue: JsonElement = JsonNull.INSTANCE
+): PostgresqlColumn<JsonElement, JsonbType>(
+	name,
+	JsonElement::class.java,
+	JsonbType(),
 	defaultValue
 )
 
