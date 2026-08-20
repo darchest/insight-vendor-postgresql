@@ -19,7 +19,7 @@ open class PostgresTable(name: String): Table(name) {
 
 	override fun vendor(): Vendor = PostgresVendor
 
-	class JoinDelegate<T: PostgresTable>(private val tableFactory: () -> T, private val where: (T) -> SqlValue<*, *>, private val type: Join.Type = Join.Type.INNER) {
+	open class JoinDelegate<T: PostgresTable>(private val tableFactory: () -> T, private val where: (T) -> SqlValue<*, *>, private val type: Join.Type = Join.Type.INNER) {
 		lateinit var join: Join<T>
 
 		operator fun provideDelegate(thisRef: PostgresTable, prop: KProperty<*>): JoinDelegate<T> {
@@ -128,6 +128,8 @@ open class PostgresTable(name: String): Table(name) {
 	class StringExpr(value: SqlValue<*, VarCharType>): ExprDelegate<StringExpression>(StringExpression(value))
 
 	class BoolExpr(exprFn: () -> SqlValue<Boolean, BooleanType>): ExprDelegate<BooleanExpression>(BooleanExpression(exprFn))
+
+	class NumericExpr(exprFn: () -> SqlValue<Double, NumericType>): ExprDelegate<NumericExpression>(NumericExpression(exprFn))
 
 	class StringLocalExpression(innerColumns: List<TableColumn<*, *>>, fn: suspend () -> String?): PostgresqlLocalExpression<String>(String::class.java, innerColumns, fn)
 

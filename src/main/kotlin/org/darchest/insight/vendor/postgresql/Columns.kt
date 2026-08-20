@@ -188,6 +188,13 @@ open class BooleanExpression(private val exprFn: () -> SqlValue<Boolean, Boolean
 	}
 }
 
+open class NumericExpression(private val exprFn: () -> SqlValue<Double, NumericType>): PostgresqlExpression<Double, NumericType>(Double::class.java, NumericType("numeric")) {
+	override suspend fun writeSql(builder: StringBuilder, vendor: Vendor, params: MutableList<SqlValue<*, *>>) {
+		val expr = exprFn()
+		expr.writeSql(builder, vendor, params)
+	}
+}
+
 class CountExpression: PostgresqlExpression<Long, BigIntType>(Long::class.java, BigIntType()) {
 	override suspend fun writeSql(builder: StringBuilder, vendor: Vendor, params: MutableList<SqlValue<*, *>>) {
 		builder.append("COUNT(1)")
