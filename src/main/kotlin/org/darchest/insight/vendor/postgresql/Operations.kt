@@ -7,6 +7,7 @@ package org.darchest.insight.vendor.postgresql
 
 import org.darchest.insight.ComparisonOperation
 import org.darchest.insight.LogicalOperation
+import org.darchest.insight.SortInfo
 import org.darchest.insight.SqlConst
 import org.darchest.insight.SqlValue
 import java.time.Instant
@@ -49,5 +50,13 @@ fun<sqlT: PostgresqlType> SqlValue<*, out sqlT>.notIn(arr: List<SqlValue<*, out 
 fun <SqlT: PostgresqlType> SqlValue<*, out PostgresqlType>.castTo(type: SqlT): SqlValue<*, SqlT> = PostgresqlCast(this, type)
 
 fun length(text: SqlValue<*, StringType>) = PostgresqlLength(text)
+
+fun stringAgg(
+    field: SqlValue<*, *>,
+    delimiter: String,
+    distinct: Boolean = false,
+    filter: SqlValue<*, BooleanType>? = null,
+    orderBy: List<SortInfo> = emptyList(),
+) = StringAgg(field, delimiter, distinct, filter, orderBy)
 
 fun SqlValue<UUIDArray, UuidArrayType>.include(vararg elems: UUID) = PostgresArrayContains(this, SqlConst(UUIDArray().apply { addAll(elems) }, UUIDArray::class.java, UuidArrayType()))

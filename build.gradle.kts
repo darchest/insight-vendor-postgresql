@@ -20,6 +20,7 @@ dependencies {
     api("com.google.code.gson:gson:2.10.1")
 
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }
 
 tasks.test {
