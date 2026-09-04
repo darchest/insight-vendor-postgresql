@@ -13,7 +13,10 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.sql.Types
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.*
 
 object PostgresVendor: Vendor {
@@ -92,6 +95,7 @@ object PostgresVendor: Vendor {
 		SqlTypeConvertersRegistry.registerConverter(String::class.java, VarCharType::class.java, strConv)
 		SqlTypeConvertersRegistry.registerConverter(String::class.java, CharType::class.java, strConv)
 		SqlTypeConvertersRegistry.registerConverter(String::class.java, TextType::class.java, strConv)
+		SqlTypeConvertersRegistry.registerConverter(String::class.java, StringType::class.java, strConv)
 	}
 
 	private fun initNumberTypes() {
@@ -155,7 +159,10 @@ object PostgresVendor: Vendor {
 
 	private fun initByteaTypes() {
 		SqlTypeConvertersRegistry.registerConverter(ByteArray::class.java, ByteaType::class.java, object: DefaultNullTypeConverter() {
-			override fun notNullJavaToSql(value: Any): String = "$value"
+			override fun notNullJavaToSql(value: Any): String {
+				val hex = (value as ByteArray).joinToString("") { "%02x".format(it) }
+				return "('\\x$hex'::bytea)"
+			}
 
 			override fun notNullJavaToPreparedSql(ps: PreparedStatement, ind: Int, value: Any) = ps.setBytes(ind, value as ByteArray)
 
