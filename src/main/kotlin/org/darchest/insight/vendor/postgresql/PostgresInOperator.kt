@@ -5,6 +5,7 @@
 
 package org.darchest.insight.vendor.postgresql
 
+import org.darchest.insight.SqlDataSource
 import org.darchest.insight.SqlValue
 import org.darchest.insight.Vendor
 
@@ -31,5 +32,10 @@ class PostgresInOperator(val left: SqlValue<*, *>, val values: List<SqlValue<*, 
     override fun fillByInnerColumns(array: MutableCollection<SqlValue<*, *>>) {
         left.innerColumns(array)
         values.forEach { it.innerColumns(array) }
+    }
+
+    override fun collectReferencedSources(out: MutableSet<SqlDataSource>) {
+        left.collectReferencedSources(out)
+        values.forEach { it.collectReferencedSources(out) }
     }
 }

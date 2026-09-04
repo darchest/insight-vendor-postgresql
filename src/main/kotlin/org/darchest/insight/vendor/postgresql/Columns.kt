@@ -175,9 +175,13 @@ abstract class PostgresqlExpression<javaType: Any, sqlT: PostgresqlType>(javaCla
 
 abstract class PostgresqlLocalExpression<javaType: Any>(javaClass: Class<javaType>, innerColumns: List<TableColumn<*, *>>, fn: suspend () -> javaType?): LocalExpression<javaType>(javaClass, innerColumns, fn)
 
-open class StringExpression(private val value: SqlValue<*, VarCharType>): PostgresqlExpression<String, StringType>(String::class.java, VarCharType()) {
+open class StringExpression(private val value: SqlValue<*, StringType>): PostgresqlExpression<String, StringType>(String::class.java, StringType("")) {
 	override suspend fun writeSql(builder: StringBuilder, vendor: Vendor, params: MutableList<SqlValue<*, *>>) {
 		value.writeSql(builder, vendor, params)
+	}
+
+	override fun collectReferencedSources(out: MutableSet<SqlDataSource>) {
+		value.collectReferencedSources(out)
 	}
 }
 
@@ -186,12 +190,20 @@ open class BooleanExpression(private val exprFn: () -> SqlValue<Boolean, Boolean
 		val expr = exprFn()
 		expr.writeSql(builder, vendor, params)
 	}
+
+	override fun collectReferencedSources(out: MutableSet<SqlDataSource>) {
+		exprFn().collectReferencedSources(out)
+	}
 }
 
 open class NumericExpression(private val exprFn: () -> SqlValue<Double, NumericType>): PostgresqlExpression<Double, NumericType>(Double::class.java, NumericType("numeric")) {
 	override suspend fun writeSql(builder: StringBuilder, vendor: Vendor, params: MutableList<SqlValue<*, *>>) {
 		val expr = exprFn()
 		expr.writeSql(builder, vendor, params)
+	}
+
+	override fun collectReferencedSources(out: MutableSet<SqlDataSource>) {
+		exprFn().collectReferencedSources(out)
 	}
 }
 

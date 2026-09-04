@@ -7,6 +7,7 @@ package org.darchest.insight.vendor.postgresql
 
 import org.darchest.insight.SortInfo
 import org.darchest.insight.SqlConst
+import org.darchest.insight.SqlDataSource
 import org.darchest.insight.SqlValue
 import org.darchest.insight.Vendor
 
@@ -56,5 +57,11 @@ class StringAgg(
         field.innerColumns(array)
         filter?.innerColumns(array)
         orderBy.forEach { it.expr.innerColumns(array) }
+    }
+
+    override fun collectReferencedSources(out: MutableSet<SqlDataSource>) {
+        field.collectReferencedSources(out)
+        filter?.collectReferencedSources(out)
+        orderBy.forEach { it.expr.collectReferencedSources(out) }
     }
 }

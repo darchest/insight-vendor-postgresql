@@ -1,5 +1,6 @@
 package org.darchest.insight.vendor.postgresql
 
+import org.darchest.insight.SqlDataSource
 import org.darchest.insight.SqlValue
 import org.darchest.insight.Vendor
 
@@ -25,5 +26,9 @@ class PostgresqlPlus<javaType: Any, sqlT: PostgresqlType>(
 
     override fun fillByInnerColumns(array: MutableCollection<SqlValue<*, *>>) {
         columns.forEach { it.innerColumns(array) }
+    }
+
+    override fun collectReferencedSources(out: MutableSet<SqlDataSource>) {
+        columns.forEach { it.collectReferencedSources(out) }
     }
 }

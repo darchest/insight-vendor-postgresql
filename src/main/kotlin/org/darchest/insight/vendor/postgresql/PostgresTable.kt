@@ -8,6 +8,9 @@ package org.darchest.insight.vendor.postgresql
 import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import org.darchest.insight.*
+import org.darchest.insight.expression.Max
+import org.darchest.insight.expression.Min
+import org.darchest.insight.vendor.postgresql.PostgresTable.ExprDelegate
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -22,7 +25,7 @@ open class PostgresTable(name: String): Table(name) {
 	open class JoinDelegate<T: PostgresTable>(private val tableFactory: () -> T, private val where: (T) -> SqlValue<*, *>, private val type: Join.Type = Join.Type.INNER) {
 		lateinit var join: Join<T>
 
-		operator fun provideDelegate(thisRef: PostgresTable, prop: KProperty<*>): JoinDelegate<T> {
+		open operator fun provideDelegate(thisRef: PostgresTable, prop: KProperty<*>): JoinDelegate<T> {
 			join = Join(thisRef, tableFactory)
 			join.codeName = (if (thisRef.joined != null) thisRef.joined!!.codeName + prop.name else prop.name) + "."
 			thisRef.joinByNames[prop.name] = join
@@ -110,7 +113,7 @@ open class PostgresTable(name: String): Table(name) {
 
 	fun <T: PostgresTable> countExpr() = CountExpression()
 
-	open class ExprDelegate<T: PostgresqlExpression<*, *>>(private val expr: T) {
+	open class ExprDelegate<T: Expression<*, *>>(private val expr: T) {
 
 		operator fun provideDelegate(thisRef: PostgresTable, prop: KProperty<*>): ExprDelegate<T> {
 			expr.sqlDataSource = thisRef
@@ -125,7 +128,11 @@ open class PostgresTable(name: String): Table(name) {
 		}
 	}
 
-	class StringExpr(value: SqlValue<*, VarCharType>): ExprDelegate<StringExpression>(StringExpression(value))
+
+
+
+
+	class StringExpr(value: SqlValue<*, StringType>): ExprDelegate<StringExpression>(StringExpression(value))
 
 	class BoolExpr(exprFn: () -> SqlValue<Boolean, BooleanType>): ExprDelegate<BooleanExpression>(BooleanExpression(exprFn))
 
@@ -164,3 +171,41 @@ open class PostgresTable(name: String): Table(name) {
 
 	class UuidLocalExpr(innerColumns: List<TableColumn<*, *>>, fn: suspend () -> UUID?): LocalExprDelegate<UuidLocalExpression>(UuidLocalExpression(innerColumns, fn))
 }
+
+fun SqlValue<*, *>.stringAggr(delimiter: String,
+							  distinct: Boolean = false,
+							  filter: SqlValue<*, BooleanType>? = null,
+							  orderBy: List<SortInfo> = emptyList(),): StringAgg {
+	val expr = StringAgg(this, delimiter, distinct, filter, orderBy)
+	val source = this.sqlDataSource
+	val name = this.codeName + "_strAgg"
+	expr.sqlDataSource = source
+	expr.codeName = name
+	source!!.sqlByNames[name] = expr
+	source.namesBySql[expr] = name
+	return expr
+}
+
+fun <javaType : Any, sqlType : SqlType> SqlValue<javaType, sqlType>.max(): Max<javaType, sqlType> {
+	val expr = Max(this)
+	val source = this.sqlDataSource
+	val name = this.codeName + "_max"
+	expr.sqlDataSource = source
+	expr.codeName = name
+	source!!.sqlByNames[name] = expr
+	source.namesBySql[expr] = name
+	return expr
+}
+
+fun <javaType : Any, sqlType : SqlType> SqlValue<javaType, sqlType>.min(): Min<javaType, sqlType> {
+	val expr = Min(this)
+	val source = this.sqlDataSource
+	val name = this.codeName + "_min"
+	expr.sqlDataSource = source
+	expr.codeName = name
+	source!!.sqlByNames[name] = expr
+	source.namesBySql[expr] = name
+	return expr
+}
+
+fun String.toSql() = SqlConst(this, String::class.java, StringType(""))

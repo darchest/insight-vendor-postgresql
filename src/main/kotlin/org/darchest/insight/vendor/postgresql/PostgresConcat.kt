@@ -5,6 +5,7 @@
 
 package org.darchest.insight.vendor.postgresql
 
+import org.darchest.insight.SqlDataSource
 import org.darchest.insight.SqlValue
 import org.darchest.insight.Vendor
 
@@ -24,5 +25,9 @@ class PostgresConcat(val values: List<SqlValue<*, StringType>>): SqlValue<String
 
     override fun fillByInnerColumns(array: MutableCollection<SqlValue<*, *>>) {
         values.forEach { it.innerColumns(array) }
+    }
+
+    override fun collectReferencedSources(out: MutableSet<SqlDataSource>) {
+        values.forEach { it.collectReferencedSources(out) }
     }
 }
