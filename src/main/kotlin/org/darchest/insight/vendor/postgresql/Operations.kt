@@ -65,3 +65,5 @@ fun <javaType: Any, sqlT: PostgresqlType> plus(
     sqlType: sqlT): SqlValue<javaType, sqlT> = PostgresqlPlus(columns, javaClass, sqlType)
 
 fun SqlValue<UUIDArray, UuidArrayType>.include(vararg elems: UUID) = PostgresArrayContains(this, SqlConst(UUIDArray().apply { addAll(elems) }, UUIDArray::class.java, UuidArrayType()))
+
+infix fun SqlValue<*, *>.contains(right: SqlValue<*, *>) = PostgresContains(this, right)

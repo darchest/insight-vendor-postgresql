@@ -9,6 +9,8 @@ import org.darchest.insight.SqlType
 
 open class PostgresqlType(name: String): SqlType(name)
 
+open class PostgresqlArrayType(name: String): PostgresqlType("$name[]")
+
 open class BooleanType: PostgresqlType("bool")
 
 open class ByteaType: PostgresqlType("bytea")

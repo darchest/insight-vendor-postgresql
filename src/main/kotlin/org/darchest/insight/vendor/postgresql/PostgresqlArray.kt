@@ -27,3 +27,22 @@ class PostgresArrayContains(val left: SqlValue<*, *>, val right: SqlValue<*, *>)
         right.collectReferencedSources(out)
     }
 }
+
+class PostgresContains(val left: SqlValue<*, *>, val right: SqlValue<*, *>): SqlValue<Boolean, BooleanType>(Boolean::class.java, BooleanType()) {
+
+    override suspend fun writeSql(builder: StringBuilder, vendor: Vendor, params: MutableList<SqlValue<*, *>>) {
+        left.writeSql(builder, vendor, params)
+        builder.append(" @> ")
+        right.writeSql(builder, vendor, params)
+    }
+
+    override fun fillByInnerColumns(array: MutableCollection<SqlValue<*, *>>) {
+        left.innerColumns(array)
+        right.innerColumns(array)
+    }
+
+    override fun collectReferencedSources(out: MutableSet<SqlDataSource>) {
+        left.collectReferencedSources(out)
+        right.collectReferencedSources(out)
+    }
+}
