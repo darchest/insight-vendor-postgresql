@@ -180,6 +180,11 @@ open class StringExpression(private val value: SqlValue<*, StringType>): Postgre
 		value.writeSql(builder, vendor, params)
 	}
 
+	override fun fillByInnerColumns(array: MutableCollection<SqlValue<*, *>>) {
+		super.fillByInnerColumns(array)
+		value.innerColumns(array)
+	}
+
 	override fun collectReferencedSources(out: MutableSet<SqlDataSource>) {
 		value.collectReferencedSources(out)
 	}

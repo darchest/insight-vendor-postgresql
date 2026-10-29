@@ -9,7 +9,7 @@ import org.darchest.insight.SqlDataSource
 import org.darchest.insight.SqlValue
 import org.darchest.insight.Vendor
 
-class PostgresConcat(val values: List<SqlValue<*, StringType>>): SqlValue<String, StringType>(String::class.java, VarCharType()) {
+class PostgresConcat(val values: List<SqlValue<*, StringType>>): PostgresqlExpression<String, StringType>(String::class.java, VarCharType()) {
     override suspend fun writeSql(builder: StringBuilder, vendor: Vendor, params: MutableList<SqlValue<*, *>>) {
         builder.append("CONCAT(")
         val iter = values.iterator()
@@ -24,6 +24,7 @@ class PostgresConcat(val values: List<SqlValue<*, StringType>>): SqlValue<String
     }
 
     override fun fillByInnerColumns(array: MutableCollection<SqlValue<*, *>>) {
+        super.fillByInnerColumns(array)
         values.forEach { it.innerColumns(array) }
     }
 
